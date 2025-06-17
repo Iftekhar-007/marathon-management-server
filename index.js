@@ -26,7 +26,14 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const database = client.db("marathonHUb");
+    const usersCollection = database.collection("users");
     const marathonsCollection = database.collection("marathons");
+
+    app.post("/users", async (req, res) => {
+      const data = req.body;
+      const result = await usersCollection.insertOne(data);
+      res.send(result);
+    });
 
     app.post("/marathons", async (req, res) => {
       const marathon = req.body;
