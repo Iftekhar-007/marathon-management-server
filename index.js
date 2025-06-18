@@ -48,13 +48,24 @@ async function run() {
     });
 
     app.get("/marathons", async (req, res) => {
-      const result = await marathonsCollection.find().toArray();
-      res.send(result);
+      try {
+        const limit = parseInt(req.query.limit);
+        const query = {}; // Add filters if needed
+
+        const cursor = marathonsCollection.find(query);
+        const result = limit
+          ? await cursor.limit(limit).toArray()
+          : await cursor.toArray();
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ error: "Failed to fetch marathons" });
+      }
     });
 
     app.get("/mymarathons", async (req, res) => {
       const email = req.query.email;
-      const query = (email = creatorEmail);
+      const query = { creatorEmail: email };
       const result = await marathonsCollection.find(query).toArray();
       res.send(result);
     });
@@ -63,6 +74,24 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await marathonsCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.put("/marathons/:id", async (req, res) => {
+      const id = req.params.id;
+      const updated = req.body;
+      const result = await marathonsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updated }
+      );
+      res.send(result);
+    });
+
+    app.delete("/marathons/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await marathonsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
     });
 
