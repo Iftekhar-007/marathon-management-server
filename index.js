@@ -3,10 +3,37 @@ const app = express();
 const cors = require("cors");
 const port = process.env.PORT || 5000;
 
+var admin = require("firebase-admin");
+
+var serviceAccount = require("./fbtoken.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
 require("dotenv").config();
 
 app.use(cors());
 app.use(express.json());
+
+const verifyFbToken = async (req, res, next) => {
+  const authHeaders = req?.headers?.authorization;
+
+  if (!authHeaders || !authHeaders.startsWith("Bearer ")) {
+    return res.status(401).send("!!Unauthorized");
+  }
+  const token = authHeaders.split(" ")[1];
+  // console.log(token);
+
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    req.decoded = decoded;
+    next();
+  } catch (error) {
+    console.log("Error from Auth Token : ", error);
+    res.status(403).send({ message: "forbidden access" });
+  }
+};
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@iftekharbases.ulu3uwc.mongodb.net/?retryWrites=true&w=majority&appName=IftekharBases`;
@@ -46,8 +73,12 @@ async function run() {
       }
     });
 
-    app.get("/applications", async (req, res) => {
+    app.get("/applications", verifyFbToken, async (req, res) => {
       const email = req.query.email;
+
+      if (email !== req?.decoded?.email) {
+        return res.status(403).send({ message: "Forbidden" });
+      }
       const query = { email: email };
       const result = await applicationsCollection.find(query).toArray();
       res.send(result);
@@ -101,8 +132,12 @@ async function run() {
       }
     });
 
-    app.get("/mymarathons", async (req, res) => {
+    app.get("/mymarathons", verifyFbToken, async (req, res) => {
       const email = req.query.email;
+
+      if (email !== req?.decoded?.email) {
+        return res.status(403).send({ message: "Forbidden" });
+      }
       const query = { creatorEmail: email };
       const result = await marathonsCollection.find(query).toArray();
       res.send(result);
