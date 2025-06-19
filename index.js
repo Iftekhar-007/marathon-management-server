@@ -28,10 +28,28 @@ async function run() {
     const database = client.db("marathonHUb");
     const usersCollection = database.collection("users");
     const marathonsCollection = database.collection("marathons");
+    const applicationsCollection = database.collection("applications");
 
     app.post("/users", async (req, res) => {
       const data = req.body;
       const result = await usersCollection.insertOne(data);
+      res.send(result);
+    });
+
+    app.post("/applications", async (req, res) => {
+      const registration = req.body;
+      try {
+        const result = await applicationsCollection.insertOne(registration);
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: "Failed to register", details: err });
+      }
+    });
+
+    app.get("/applications", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const result = await applicationsCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -44,6 +62,26 @@ async function run() {
       const marathon = req.body;
 
       const result = await marathonsCollection.insertOne(marathon);
+      res.send(result);
+    });
+
+    // PUT
+    app.put("/applications/:id", async (req, res) => {
+      const id = req.params.id;
+      const updated = req.body;
+      const result = await applicationsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updated }
+      );
+      res.send(result);
+    });
+
+    // DELETE
+    app.delete("/applications/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await applicationsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
     });
 
