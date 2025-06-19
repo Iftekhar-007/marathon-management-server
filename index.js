@@ -5,7 +5,10 @@ const port = process.env.PORT || 5000;
 
 var admin = require("firebase-admin");
 
-var serviceAccount = require("./fbtoken.json");
+const decoded = Buffer.from(process.env.FB_TOKEN_KEY, "base64").toString(
+  "utf8"
+);
+var serviceAccount = JSON.parse(decoded);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
