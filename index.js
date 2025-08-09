@@ -5,16 +5,17 @@ const port = process.env.PORT || 5000;
 
 var admin = require("firebase-admin");
 
+require("dotenv").config();
+
 const decoded = Buffer.from(process.env.FB_TOKEN_KEY, "base64").toString(
   "utf8"
 );
+// console.log(decoded);
 var serviceAccount = JSON.parse(decoded);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
-
-require("dotenv").config();
 
 app.use(cors());
 app.use(express.json());
