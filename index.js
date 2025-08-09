@@ -120,10 +120,32 @@ async function run() {
       res.send(result);
     });
 
+    // app.get("/marathons", async (req, res) => {
+    //   try {
+    //     const limit = parseInt(req.query.limit);
+    //     const query = {};
+
+    //     const cursor = marathonsCollection.find(query);
+    //     const result = limit
+    //       ? await cursor.limit(limit).toArray()
+    //       : await cursor.toArray();
+
+    //     res.send(result);
+    //   } catch (error) {
+    //     res.status(500).send({ error: "Failed to fetch marathons" });
+    //   }
+    // });
+
     app.get("/marathons", async (req, res) => {
       try {
         const limit = parseInt(req.query.limit);
-        const query = {}; // Add filters if needed
+        const upcoming = req.query.upcoming === "true"; // এখানে আসবে কি না check করো
+        const today = new Date();
+
+        let query = {};
+        if (upcoming) {
+          query = { marathonStartDate: { $gt: today.toISOString() } }; // শুধু ভবিষ্যতের মেরাথন
+        }
 
         const cursor = marathonsCollection.find(query);
         const result = limit
