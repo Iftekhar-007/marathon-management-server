@@ -67,13 +67,52 @@ async function run() {
       res.send(result);
     });
 
+    // app.post("/applications", async (req, res) => {
+    //   const registration = req.body;
+    //   try {
+    //     const result = await applicationsCollection.insertOne(registration);
+    //     res.send(result);
+    //   } catch (err) {
+    //     res.status(500).send({ error: "Failed to register", details: err });
+    //   }
+    // });
+
     app.post("/applications", async (req, res) => {
       const registration = req.body;
+      const { email, marathonId } = registration;
+
       try {
-        const result = await applicationsCollection.insertOne(registration);
-        res.send(result);
+        // ✅ Check if already applied
+        const existing = await applicationsCollection.findOne({
+          email,
+          marathonId,
+        });
+        if (existing) {
+          return res
+            .status(400)
+            .send({ error: "You have already applied for this marathon" });
+        }
+
+        // ✅ Insert into applications collection
+        const result = await applicationsCollection.insertOne({
+          ...registration,
+          appliedAt: new Date(),
+        });
+
+        // ✅ Increment totalRegistrations in marathons collection
+        await marathonsCollection.updateOne(
+          { _id: new ObjectId(marathonId) },
+          { $inc: { totalRegistrations: 1 } }
+        );
+
+        res.send({
+          message: "Application successful",
+          insertedId: result.insertedId,
+        });
       } catch (err) {
-        res.status(500).send({ error: "Failed to register", details: err });
+        res
+          .status(500)
+          .send({ error: "Failed to register", details: err.message });
       }
     });
 
